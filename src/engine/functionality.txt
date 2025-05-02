@@ -17,3 +17,6 @@ filesystem:
 
 draw:
 -all display methods
+
+hardware:
+-all methods directly accessed by the engine
