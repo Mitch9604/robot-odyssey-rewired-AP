@@ -12,3 +12,6 @@ input:
 output:
 -manages display/audio
 
+filesystem:
+-self explanatory, provides methods of accessing the DOS filesystem
+
