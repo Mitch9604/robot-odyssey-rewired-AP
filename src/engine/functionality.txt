@@ -1,0 +1,8 @@
+Which files do what
+
+sbt86:
+-is the virtual processor/system. DO NOT CHANGE
+
+roData:
+-contains general RO data: sprites, Circuitry data etc
+
