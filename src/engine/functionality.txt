@@ -15,3 +15,5 @@ output:
 filesystem:
 -self explanatory, provides methods of accessing the DOS filesystem
 
+draw:
+-all display methods
