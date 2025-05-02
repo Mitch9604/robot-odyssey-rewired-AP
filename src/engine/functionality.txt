@@ -6,3 +6,9 @@ sbt86:
 roData:
 -contains general RO data: sprites, Circuitry data etc
 
+input:
+-manages user input
+
+output:
+-manages display/audio
+
