@@ -21,7 +21,7 @@ def findSelfModifyingCode(b):
     # whether the address has been already marked as a dynamic literal.
     b.decl(
         "static uint8_t dynLiteralsMap[] = { %s };"
-        % "".join(["%d," % (i in b.image.dynLiterals) for i in xrange(0x10000)])
+        % "".join(["%d," % (i in b.image.dynLiterals) for i in range(0x10000)])
     )
 
     b.trace(
@@ -167,9 +167,9 @@ def structTrace(b, structName, traceMode, structBase, structSize, itemTable):
     ranges within the structure. 'traceMode' is the tracing mode (r, w, rw).
     """
     # Generate a lookup table which identifies each byte in the structure
-    lut = ["{NULL, 0x%x}," % i for i in xrange(structSize)]
+    lut = ["{NULL, 0x%x}," % i for i in range(structSize)]
     for addr, name, size in itemTable:
-        for i in xrange(size):
+        for i in range(size):
             lut[addr - structBase + i] = '{"%s", 0x%x},' % (name, i)
 
     b.decl(

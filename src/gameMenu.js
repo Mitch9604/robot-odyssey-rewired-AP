@@ -3,16 +3,25 @@ import * as EngineLoader from './engineLoader.js';
 import { mouseTrackingEnd } from './input/mouse.js';
 
 export const States = {
-    SPLASH:             'SPLASH',
-    MENU_TRANSITION:    'MENU_TRANSITION',
-    MENU_ACTIVE:        'MENU_ACTIVE',
-    EXEC_LAUNCHING:     'EXEC_LAUNCHING',
-    EXEC:               'EXEC',
-    LOADING:            'LOADING',
-    MODAL_TEXTBOX:      'MODAL_TEXTBOX',
-    MODAL_FILES:        'MODAL_FILES',
-    ERROR_HALT:         'ERROR_HALT',
+    SPLASH: 'SPLASH',
+    MENU_TRANSITION: 'MENU_TRANSITION',
+    MENU_ACTIVE: 'MENU_ACTIVE',
+    EXEC_LAUNCHING: 'EXEC_LAUNCHING',
+    EXEC: 'EXEC',
+    LOADING: 'LOADING',
+    MODAL_TEXTBOX: 'MODAL_TEXTBOX',
+    MODAL_FILES: 'MODAL_FILES',
+    ERROR_HALT: 'ERROR_HALT',
 };
+
+export const Worlds = {
+    RO_WORLD_SEWER: 0,
+    RO_WORLD_SUBWAY: 1,
+    RO_WORLD_TOWN: 2,
+    RO_WORLD_COMP: 3,
+    RO_WORLD_STREET: 4,
+    RO_WORLD_LAB: 30,
+}
 
 const engine_controls = document.getElementById('engine_controls');
 const speed_selector = document.getElementById('speed_selector');
@@ -32,8 +41,7 @@ let menu_joystick_y = 0;
 let menu_joystick_accum = 0;
 let modal_saved = null;
 
-export function showError(e)
-{
+export function showError(e) {
     // This error handler should be callable at any time, even before init()
 
     e = e.toString();
@@ -51,8 +59,7 @@ export function showError(e)
     throw e;    // In case we have a debugger attached
 }
 
-export function modal(message, onclick)
-{
+export function modal(message, onclick) {
     return new Promise((resolve) => {
 
         if (modal_saved === null) {
@@ -78,8 +85,7 @@ export function modal(message, onclick)
     });
 }
 
-export function exitModal()
-{
+export function exitModal() {
     const saved = modal_saved;
     modal_saved = null;
 
@@ -93,10 +99,9 @@ export function exitModal()
     saved.resolve();
 }
 
-export function modalDuringPromise(promise, message)
-{
+export function modalDuringPromise(promise, message) {
     var end = exitModal;
-    const nop = () => {};
+    const nop = () => { };
     const finish = () => { end = nop; };
     modal(message, nop).then(finish);
 
@@ -104,13 +109,11 @@ export function modalDuringPromise(promise, message)
     setTimeout(() => { promise.then(() => end(), () => end()); }, minimumDuration);
 }
 
-export function getState()
-{
+export function getState() {
     return current_state;
 }
 
-export function init()
-{
+export function init() {
     // Handle asynchronous errors in loading the engine
     EngineLoader.complete.then(null, showError);
 
@@ -156,8 +159,7 @@ export function init()
     setState(States.SPLASH);
 }
 
-export function pressKey(ascii, scancode)
-{
+export function pressKey(ascii, scancode) {
     const engine = EngineLoader.instance;
 
     if (current_state === States.SPLASH) {
@@ -199,26 +201,24 @@ export function pressKey(ascii, scancode)
     }
 }
 
-function joystickIntervalFunc()
-{
+function joystickIntervalFunc() {
     var rate = 0.25;  // Max menu ticks per interval
 
     // Make rollover at the edges slower
     if ((current_menu_choice === 0 && menu_joystick_y < 0) ||
-        (current_menu_choice === choices.length-1 && menu_joystick_y > 0)) {
+        (current_menu_choice === choices.length - 1 && menu_joystick_y > 0)) {
         rate *= 0.3;
     }
 
     menu_joystick_accum += rate * menu_joystick_y;
-    let intpart = menu_joystick_accum|0;
+    let intpart = menu_joystick_accum | 0;
     if (intpart !== 0) {
         menu_joystick_accum -= intpart;
         setMenuChoice(current_menu_choice + intpart);
     }
 }
 
-export function setJoystickAxes(x, y)
-{
+export function setJoystickAxes(x, y) {
     if (current_state === States.MENU_ACTIVE) {
         menu_joystick_y = Math.max(-1, Math.min(1, y));
         if (y === 0) {
@@ -239,8 +239,7 @@ export function setJoystickAxes(x, y)
     }
 }
 
-export function setJoystickButton(b)
-{
+export function setJoystickButton(b) {
     if (b && current_state === States.SPLASH) {
         setState(States.MENU_TRANSITION);
     } else if (b && current_state === States.MODAL_TEXTBOX) {
@@ -250,8 +249,7 @@ export function setJoystickButton(b)
     }
 }
 
-function getLastSplashImage()
-{
+function getLastSplashImage() {
     let result = null;
     for (let child of splash.children) {
         if (child.nodeName === 'IMG') {
@@ -261,8 +259,7 @@ function getLastSplashImage()
     return result;
 }
 
-export async function afterLoadingState()
-{
+export async function afterLoadingState() {
     const engine = EngineLoader.instance;
     if (engine.calledRun) {
         // Already loaded
@@ -273,8 +270,7 @@ export async function afterLoadingState()
     return await EngineLoader.complete;
 }
 
-export function setState(s)
-{
+export function setState(s) {
     if (s === current_state) {
         return;
     }
@@ -358,8 +354,7 @@ export function setState(s)
     }
 }
 
-function setMenuChoice(c)
-{
+function setMenuChoice(c) {
     c %= choices.length;
     if (c < 0) c += choices.length;
 
@@ -376,8 +371,7 @@ function setMenuChoice(c)
     game_menu_cursor.style.top = offset_percent + '%';
 }
 
-async function invokeMenuChoice()
-{
+async function invokeMenuChoice() {
     const choice = choices[current_menu_choice].dataset;
     const engine = await afterLoadingState();
 

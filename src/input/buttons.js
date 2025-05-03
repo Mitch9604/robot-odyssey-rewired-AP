@@ -3,21 +3,20 @@ import { mouseTrackingEnd } from './mouse.js';
 import * as GameMenu from '../gameMenu.js';
 import * as FileManager from '../files/fileManager.js';
 import * as EngineLoader from '../engineLoader.js';
+import * as Keybinds from './keybinds.js';
 
 const canvas = document.getElementById('framebuffer');
 const speed_selector = document.getElementById('speed_selector');
 const gamepad_button_mappings = [];
 
-export function updateMappedGamepadButton(pressed, index)
-{
+export function updateMappedGamepadButton(pressed, index) {
     const handler = gamepad_button_mappings[index];
     if (handler) {
         handler(pressed, index);
     }
 }
 
-export function addButtonClick(button_element, click)
-{
+export function addButtonClick(button_element, click) {
     addButtonEvents(button_element, () => {
         button_element.classList.add('active_btn');
     }, () => {
@@ -25,10 +24,8 @@ export function addButtonClick(button_element, click)
     }, click);
 }
 
-export function addButtonEvents(button_element, down, up, click)
-{
-    const down_wrapper = function (e)
-    {
+export function addButtonEvents(button_element, down, up, click) {
+    const down_wrapper = function (e) {
         mouseTrackingEnd();
         audioContextSetup();
         if (!click) {
@@ -39,8 +36,7 @@ export function addButtonEvents(button_element, down, up, click)
         }
     };
 
-    const up_wrapper = function (e)
-    {
+    const up_wrapper = function (e) {
         if (!click) {
             e.preventDefault();
         }
@@ -82,24 +78,49 @@ export function addButtonEvents(button_element, down, up, click)
     }
 }
 
-function controlCode(key)
-{
+function controlCode(key) {
     return String.fromCharCode(key.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0) + 1);
 }
 
-export function init()
-{
-    function keycode(ascii, scancode)
-    {
-        if (typeof(ascii) !== typeof(0)) {
+function letterCode(key) {
+    const engine = EngineLoader.instance;
+    const worldID = engine.getWorldID();
+    if (worldID == GameMenu.Worlds.RO_WORLD_LAB)
+        switch (key) {
+            case Keybinds.chipLoad:
+                return 'L';
+            case Keybinds.chipSave:
+                return 'S';
+            case Keybinds.chipRecord:
+                return '?';
+            case Keybinds.paintbrush:
+                return 'P';
+            case Keybinds.labPower:
+                return 'H';
+        }
+    switch (key) {
+        case Keybinds.cursor:
+            return 'C';
+        case Keybinds.solder:
+            return 'S';
+        case Keybinds.radio:
+            return 'R';
+        case Keybinds.toolbox:
+            return 'T'
+    }
+    return key;
+}
+
+export function init() {
+    function keycode(ascii, scancode) {
+        if (typeof (ascii) !== typeof (0)) {
             ascii = ascii.length === 1 ? ascii.charCodeAt(0) : parseInt(ascii, 0);
         }
         GameMenu.pressKey(ascii, scancode);
         audioContextSetup();
     }
 
-    document.body.addEventListener('keydown', function (e)
-    {
+    document.body.addEventListener('keydown', function (e) {
         const code = e.code || e.key || '';
         const key = e.key || '';
         const shift = e.shiftKey;
@@ -113,21 +134,21 @@ export function init()
             mouseTrackingEnd();
         }
 
-        if (code === 'ArrowUp' && !shift)         keycode(0, 0x48);
-        else if (code === 'ArrowUp' && shift)     keycode('8', 0x48);
-        else if (code === 'ArrowDown' && !shift)  keycode(0, 0x50);
-        else if (code === 'ArrowDown' && shift)   keycode('2', 0x50);
-        else if (code === 'ArrowLeft' && !shift)  keycode(0, 0x4B);
-        else if (code === 'ArrowLeft' && shift)   keycode('4', 0x4B);
-        else if (code === 'ArrowRight' && !shift) keycode(0, 0x4D);
-        else if (code === 'ArrowRight' && shift)  keycode('6', 0x4D);
-        else if (code === 'Backspace' && plain)   keycode('\x08', 0);
-        else if (code === 'Enter' && plain)       keycode('\x0D', 0x1C);
-        else if (code === 'Escape' && plain)      keycode('\x1b', 0x01);
+        if (code === Keybinds.moveUp && !shift) keycode(0, 0x48);
+        else if (code === Keybinds.moveUp && shift) keycode('8', 0x48);
+        else if (code === Keybinds.moveDown && !shift) keycode(0, 0x50);
+        else if (code === Keybinds.moveDown && shift) keycode('2', 0x50);
+        else if (code === Keybinds.moveLeft && !shift) keycode(0, 0x4B);
+        else if (code === Keybinds.moveLeft && shift) keycode('4', 0x4B);
+        else if (code === Keybinds.moveRight && !shift) keycode(0, 0x4D);
+        else if (code === Keybinds.moveRight && shift) keycode('6', 0x4D);
+        else if (code === 'Backspace' && plain) keycode('\x08', 0);
+        else if (code === 'Enter' && plain) keycode('\x0D', 0x1C);
+        else if (code === 'Escape' && plain) keycode('\x1b', 0x01);
 
         else if (key.length === 1 && plain) {
             // Letter keys
-            keycode(key.toUpperCase(), 0);
+            keycode(letterCode(key.toUpperCase()), 0);
         } else if (key.length === 1 && ctrl && !alt && !meta) {
             // CTRL keys, useful for sound on-off and for cheats
             keycode(controlCode(key), 0);
@@ -142,8 +163,7 @@ export function init()
 
     let delay = null;
     let repeater = null;
-    function stopRepeat()
-    {
+    function stopRepeat() {
         if (delay !== null) {
             clearTimeout(delay);
             delay = null;

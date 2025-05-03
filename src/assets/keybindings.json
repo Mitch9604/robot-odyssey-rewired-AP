@@ -1,0 +1,18 @@
+{
+    // movement
+    "moveUp": "ArrowUp",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveDown": "ArrowDown",
+    // game function
+    "toolbox": "T",
+    "cursor": "C",
+    "solder": "S",
+    "radioToggle": "R",
+    // innovation lab
+    "powerToggle": "H",
+    "paintbrushToggle": "P",
+    "chipSave": "S",
+    "chipLoad": "L",
+    "chipRecord": "?"
+}

@@ -34,7 +34,6 @@ static Hardware hwAux(outputAux);
 SBT_STATIC_PROCESS(hwAux, LabEXE);
 SBT_STATIC_PROCESS(hwAux, GameEXE);
 
-
 static void loop()
 {
     // Run the main hardware instance until the next queued delay
@@ -43,19 +42,25 @@ static void loop()
     const float speed = engine_speed;
     const unsigned minimum_delay_milliseconds = 10;
 
-    if (!(speed > 0.0f)) {
+    if (!(speed > 0.0f))
+    {
         // Engine paused via speed control
         emscripten_pause_main_loop();
         return;
     }
 
-    while (true) {
+    while (true)
+    {
         unsigned queue_delay = outputQueue.run();
 
-        if (queue_delay == 0) {
-            if (hw.process) {
+        if (queue_delay == 0)
+        {
+            if (hw.process)
+            {
                 hw.process->run();
-            } else {
+            }
+            else
+            {
                 // Engine paused until exec
                 emscripten_pause_main_loop();
                 return;
@@ -65,11 +70,15 @@ static void loop()
         delay_accum += queue_delay;
         unsigned adjusted_delay = delay_accum / engine_speed;
 
-        if (adjusted_delay >= minimum_delay_milliseconds) {
-            if (hw.input.checkForInputBacklog()) {
+        if (adjusted_delay >= minimum_delay_milliseconds)
+        {
+            if (hw.input.checkForInputBacklog())
+            {
                 // Speed up for keyboard input backlog
                 emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
-            } else {
+            }
+            else
+            {
                 // Millisecond-based timing, with optional modifier
                 emscripten_set_main_loop_timing(EM_TIMING_SETTIMEOUT, adjusted_delay);
             }
@@ -93,7 +102,8 @@ static void exec(const std::string &process, const std::string &arg)
 {
     outputQueue.clear();
     hw.exec(process.c_str(), arg.c_str());
-    if (has_main_loop) {
+    if (has_main_loop)
+    {
         emscripten_resume_main_loop();
     }
 }
@@ -104,10 +114,11 @@ static void setSpeed(float speed)
     engine_speed = speed;
 
     // Update frameskip so we can fast-forward without being limited by draw speed
-    outputQueue.setFrameSkip((unsigned) std::max(0.0f, speed / 8.0f));
+    outputQueue.setFrameSkip((unsigned)std::max(0.0f, speed / 8.0f));
 
     // This may restart a paused main loop
-    if (has_main_loop && speed > 0.0f) {
+    if (has_main_loop && speed > 0.0f)
+    {
         emscripten_resume_main_loop();
     }
 }
@@ -125,7 +136,8 @@ static void setJoystickAxes(float x, float y)
 
 static void setJoystickButton(bool button)
 {
-    if (button) {
+    if (button)
+    {
         outputQueue.skipDelay();
     }
     hw.input.setJoystickButton(button);
@@ -138,7 +150,8 @@ static void setMouseTracking(int x, int y)
 
 static void setMouseButton(bool button)
 {
-    if (button) {
+    if (button)
+    {
         outputQueue.skipDelay();
     }
     hw.input.setMouseButton(button);
@@ -161,9 +174,11 @@ static bool loadChip(uint8_t id)
 
 static bool loadGame()
 {
-    if (hw.loadGame()) {
+    if (hw.loadGame())
+    {
         outputQueue.clear();
-        if (has_main_loop) {
+        if (has_main_loop)
+        {
             emscripten_resume_main_loop();
         }
         return true;
@@ -171,7 +186,7 @@ static bool loadGame()
     return false;
 }
 
-static val getFile(const FileInfo& file)
+static val getFile(const FileInfo &file)
 {
     return val(typed_memory_view(file.size, file.data));
 }
@@ -180,7 +195,8 @@ static val getStaticFiles()
 {
     val files = val::object();
 
-    for (const FileInfo **iter = FileInfo::index; *iter; iter++) {
+    for (const FileInfo **iter = FileInfo::index; *iter; iter++)
+    {
         const FileInfo &file = **iter;
         files.set(file.name, getFile(file));
     }
@@ -195,7 +211,7 @@ static val getMemory()
 
 static val getCompressionDictionary()
 {
-    const std::vector<uint8_t>& dict = tinySave.getCompressionDictionary();
+    const std::vector<uint8_t> &dict = tinySave.getCompressionDictionary();
     return val(typed_memory_view(dict.size(), &dict[0]));
 }
 
@@ -209,26 +225,37 @@ static val getSaveFile()
     return getFile(hw.fs.save.file);
 }
 
+// might not be good... we'll see
+static val getWorldID()
+{
+    return val(hw.fs.save.asGame().worldId);
+}
+
 static bool setSaveFileWithInstance(val buffer, Hardware &inst, bool compressed)
 {
     uint32_t size = buffer["length"].as<uint32_t>();
     uint32_t max_size = compressed ? sizeof tinySave.buffer : sizeof inst.fs.save.buffer;
     uint8_t *dest_addr = compressed ? tinySave.buffer : inst.fs.save.buffer;
 
-    if (size > max_size) {
+    if (size > max_size)
+    {
         return false;
     }
-    if (size == 0) {
+    if (size == 0)
+    {
         return false;
     }
 
     val dest_view = val(typed_memory_view(size, dest_addr));
     dest_view.call<void>("set", buffer);
 
-    if (compressed) {
+    if (compressed)
+    {
         tinySave.size = size;
         return tinySave.decompress(inst.fs.save.file);
-    } else {
+    }
+    else
+    {
         inst.fs.save.file.size = size;
         return true;
     }
@@ -244,22 +271,25 @@ static val screenshotSaveFile(val buffer, bool compressed)
     // Load the save file within our auxiliary hardware instance, and run until the first frame.
     // Has no effect on the main game instance. Returns null if the save file can't be loaded.
 
-    if (!setSaveFileWithInstance(buffer, hwAux, compressed)) {
+    if (!setSaveFileWithInstance(buffer, hwAux, compressed))
+    {
         return val::null();
     }
 
-    if (!hwAux.loadGame() && !hwAux.loadChipDocumentation()) {
+    if (!hwAux.loadGame() && !hwAux.loadChipDocumentation())
+    {
         return val::null();
     }
 
     // Run until first frame
     outputAux.clear();
-    do {
+    do
+    {
         assert(hwAux.process);
         hwAux.process->run();
     } while (outputAux.frame_counter == 0);
 
-    uint8_t *image_bytes = reinterpret_cast<uint8_t*>(outputAux.draw.backbuffer);
+    uint8_t *image_bytes = reinterpret_cast<uint8_t *>(outputAux.draw.backbuffer);
     size_t image_byte_count = sizeof outputAux.draw.backbuffer;
     unsigned width = RGBDraw::SCREEN_WIDTH;
     unsigned height = RGBDraw::SCREEN_HEIGHT;
@@ -295,22 +325,24 @@ static val getGameMemory()
     // Just for exploration/fun currently.
 
     ROData d;
-    if (!hw.process || !d.fromProcess(hw.process)) {
+    if (!hw.process || !d.fromProcess(hw.process))
+    {
         return val::null();
     }
 
     val robots = val::array();
-    for (unsigned i = 0; i < d.robots.count; i++) {
+    for (unsigned i = 0; i < d.robots.count; i++)
+    {
         val bot = val::object();
-        bot.set("state", val(typed_memory_view(sizeof(RORobot), reinterpret_cast<uint8_t*>(&d.robots.state[i]))));
-        bot.set("grabbers", val(typed_memory_view(sizeof(RORobotGrabber), reinterpret_cast<uint8_t*>(&d.robots.grabbers[i]))));
-        bot.set("batteryAcc", val(typed_memory_view(sizeof(RORobotBatteryAcc), reinterpret_cast<uint8_t*>(&d.robots.batteryAcc[i]))));
+        bot.set("state", val(typed_memory_view(sizeof(RORobot), reinterpret_cast<uint8_t *>(&d.robots.state[i]))));
+        bot.set("grabbers", val(typed_memory_view(sizeof(RORobotGrabber), reinterpret_cast<uint8_t *>(&d.robots.grabbers[i]))));
+        bot.set("batteryAcc", val(typed_memory_view(sizeof(RORobotBatteryAcc), reinterpret_cast<uint8_t *>(&d.robots.batteryAcc[i]))));
         robots.set(i, bot);
     }
 
     val r = val::object();
-    r.set("world", val(typed_memory_view(sizeof(ROWorld), reinterpret_cast<uint8_t*>(d.world))));
-    r.set("circuit", val(typed_memory_view(sizeof(ROCircuit), reinterpret_cast<uint8_t*>(d.circuit))));
+    r.set("world", val(typed_memory_view(sizeof(ROWorld), reinterpret_cast<uint8_t *>(d.world))));
+    r.set("circuit", val(typed_memory_view(sizeof(ROCircuit), reinterpret_cast<uint8_t *>(d.circuit))));
     r.set("robots", robots);
 
     return r;
@@ -326,19 +358,18 @@ static val getColorMemory()
 
 EMSCRIPTEN_BINDINGS(engine)
 {
-    constant("MAX_FILESIZE", (unsigned) DOSFilesystem::MAX_FILESIZE);
-    constant("MEM_SIZE", (unsigned) Hardware::MEM_SIZE);
-    constant("CPU_CLOCK_HZ", (unsigned) OutputQueue::CPU_CLOCK_HZ);
-    constant("AUDIO_HZ", (unsigned) OutputQueue::AUDIO_HZ);
-    constant("SCREEN_WIDTH", (unsigned) RGBDraw::SCREEN_WIDTH);
-    constant("SCREEN_HEIGHT", (unsigned) RGBDraw::SCREEN_HEIGHT);
-    constant("SCREEN_TILE_SIZE", (unsigned) ColorTable::SCREEN_TILE_SIZE);
+    constant("MAX_FILESIZE", (unsigned)DOSFilesystem::MAX_FILESIZE);
+    constant("MEM_SIZE", (unsigned)Hardware::MEM_SIZE);
+    constant("CPU_CLOCK_HZ", (unsigned)OutputQueue::CPU_CLOCK_HZ);
+    constant("AUDIO_HZ", (unsigned)OutputQueue::AUDIO_HZ);
+    constant("SCREEN_WIDTH", (unsigned)RGBDraw::SCREEN_WIDTH);
+    constant("SCREEN_HEIGHT", (unsigned)RGBDraw::SCREEN_HEIGHT);
+    constant("SCREEN_TILE_SIZE", (unsigned)ColorTable::SCREEN_TILE_SIZE);
 
     enum_<SaveStatus>("SaveStatus")
         .value("OK", SaveStatus::OK)
         .value("NOT_SUPPORTED", SaveStatus::NOT_SUPPORTED)
-        .value("BLOCKED", SaveStatus::BLOCKED)
-        ;
+        .value("BLOCKED", SaveStatus::BLOCKED);
 
     function("exec", &exec);
     function("setSpeed", &setSpeed);
@@ -356,6 +387,7 @@ EMSCRIPTEN_BINDINGS(engine)
     function("getStaticFiles", &getStaticFiles);
     function("getJoyFile", &getJoyFile);
     function("getSaveFile", &getSaveFile);
+    function("getWorldID", &getWorldID);
     function("setSaveFile", &setSaveFile);
     function("screenshotSaveFile", &screenshotSaveFile);
     function("setCheatsEnabled", &setCheatsEnabled);
